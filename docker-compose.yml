@@ -1,0 +1,68 @@
+version: '3.5'
+
+volumes:
+  gnosis-safe-nginx-shared:
+
+services:
+  gnosis-safe-nginx:
+    image: nginx:alpine
+    hostname: nginx
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./vendor/github.com/gnosis/safe-transaction-service/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - gnosis-safe-nginx-shared:/nginx
+    depends_on:
+      - gnosis-safe-transaction-service-web
+
+  gnosis-safe-redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  gnosis-safe-transaction-service-db:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+  gnosis-safe-transaction-service-worker: &gnosis-safe-transaction-service-worker
+    build:
+      context: ./vendor/github.com/gnosis/safe-transaction-service/
+      dockerfile: ./docker/web/Dockerfile
+    env_file:
+      - configs/gnosis-safe-transaction-service.env
+    depends_on:
+      - gnosis-safe-transaction-service-db
+      - gnosis-safe-redis
+    command: docker/web/celery/worker/run.sh
+
+  gnosis-safe-transaction-service-scheduler:
+    <<: *gnosis-safe-transaction-service-worker
+    command: docker/web/celery/scheduler/run.sh
+
+  gnosis-safe-transaction-service-web:
+    <<: *gnosis-safe-transaction-service-worker
+    working_dir: /app
+    ports:
+      - "8888:8888"
+    volumes:
+      - gnosis-safe-nginx-shared:/nginx
+    command: docker/web/run_web.sh
+
+  gnosis-safe-client-gateway-web:
+    build:
+      context: ./vendor/github.com/gnosis/safe-client-gateway/
+    env_file:
+      - configs/gnosis-safe-client-gateway.env
+    depends_on:
+      - gnosis-safe-redis
+    ports:
+      - "8000:3666"
+
+  gnosis-safe-react:
+    build:
+      context: ./docker-gnosis-safe-react
+    env_file:
+      - configs/gnosis-safe-react.env

@@ -1,0 +1,242 @@
+#!/bin/sh
+#
+# git-vendor.sh: manage vendored repos via git-subtree
+#
+# Copyright (c) 2016 Brett Langdon <me@brett.is>
+#
+_usage()
+{
+    cat <<EOF
+Usage:
+  git vendor --help
+  git vendor add [--prefix <dir>] <name> <repository> [<ref>]
+  git vendor list [<name>]
+  git vendor remove <name>
+  git vendor update <name> [<ref>]
+EOF
+}
+
+case "$1" in
+    ""|"-h"|"--help") _usage && exit ;;
+esac
+
+PATH=$PATH:$(git --exec-path)
+. git-sh-setup
+require_work_tree
+
+command="$1"
+shift
+case "$command" in
+    "add"|"list"|"remove"|"update") ;;
+    *) >&2 echo "error: unknown command \"$command\"" && _usage && exit 1 ;;
+esac
+
+prefix="vendor"
+if [ "$1" = "--prefix" ]; then
+    prefix="$2"
+    shift; shift
+fi
+
+# Simulate an associative array (for older versions of bash)
+var_name()
+{
+    printf "name_$1" | tr -c '[A-Za-z0-9]' '_'
+}
+
+vendor_names_from_log()
+{
+    name=
+    dir=
+    git log --grep="^git-vendor-name: .*\$" \
+	--pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+		git-vendor-name:) name="$b" ;;
+                git-vendor-dir:) dir="$b" ;;
+		END)
+                    # Only consider dependencies which still exist on disk
+                    # and haven't been renamed
+                    eval `printf val='$'$(var_name "$dir")`
+                    if [ -d "$dir" -a -z "$val" ]; then
+                        echo "$name"
+                        eval `printf $(var_name "$dir")=1`
+                    fi
+                    name=
+                    dir=
+                    ;;
+	    esac
+	done | sort -u
+}
+
+vendor_git_log_from_name()
+{
+    name="$1"
+    git log -1 --grep="^git-vendor-name: $name\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD
+}
+
+vendor_name_from_dir()
+{
+    name=
+    dir="$1"
+    git log -1 --grep="^git-vendor-dir: $dir\$" --pretty=format:'START %H%n%s%n%n%b%nEND%n' HEAD |
+        while read a b junk; do
+            case "$a" in
+                git-vendor-name:) name="$b" ;;
+                END)
+                    if [ -n "$name" ]; then
+                        echo "$name"
+                    fi
+                    name=
+                    ;;
+            esac
+        done
+}
+
+cmd_add()
+{
+    require_clean_work_tree
+    name="$1"
+    repository="$2"
+    ref="master"
+    if [ "$3" != "" ]; then
+        ref="$3"
+    fi
+    if [ $# -lt 2 ];
+    then
+        die "Incorrect options provided: git vendor add <name> <repository> [<ref>]"
+    fi
+
+    dir="$prefix/$(echo "$repository" | sed -E 's/^[a-zA-Z]+((:\/\/)|@)//' | sed 's/:/\//' | sed -E 's/\.git$//')"
+    message="\
+Add \"$name\" from \"$repository@$ref\"
+
+git-vendor-name: $name
+git-vendor-dir: $dir
+git-vendor-repository: $repository
+git-vendor-ref: $ref
+"
+    set -x
+    git subtree add --prefix "$dir" --message "$message" "$repository" "$ref" --squash
+}
+
+cmd_list()
+{
+    showOnly="$1"
+    for name in $(vendor_names_from_log);
+    do
+        vendor_git_log_from_name "$name" |
+	    while read a b junk; do
+	        case "$a" in
+		    START) commit="$b" ;;
+                    git-vendor-name:) name="$b" ;;
+                    git-vendor-dir:) dir="$b" ;;
+                    git-vendor-ref:) ref="$b" ;;
+		    git-vendor-repository:) repository="$b" ;;
+		    END)
+                        if [ ! -z "$repository" ];
+                        then
+                            if [ -z "$showOnly" -o "$showOnly" = "$name" ]; then
+                                printf "$name@$ref:\n"
+                                printf "\tname:\t$name\n"
+                                printf "\tdir:\t$dir\n"
+                                printf "\trepo:\t$repository\n"
+                                printf "\tref:\t$ref\n"
+                                printf "\tcommit:\t$commit\n"
+                                printf "\n"
+                            fi
+                        fi
+                        name=
+                        dir=
+                        ref=
+                        commit=
+                        repository=
+                        ;;
+	        esac
+	    done
+    done;
+
+}
+
+cmd_update()
+{
+    require_clean_work_tree
+    name="$1"
+    ref="master"
+    if [ "$2" != "" ]; then
+        ref="$2"
+    fi
+    if [ $# -lt 1 ]; then
+        die "Incorrect options provided: git vendor update <name> [<ref>]"
+    fi
+    vendor_git_log_from_name "$name" |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+                git-vendor-dir:) dir="$b" ;;
+		git-vendor-repository:) repository="$b" ;;
+		git-vendor-ref:) curr_ref="$b" ;;
+		END)
+                    # Make sure the dependency exists on disk
+                    if [ ! -d "$dir" ]; then
+                        die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+
+                    # And hasn't been renamed
+                    logname=$(vendor_name_from_dir "$dir")
+                    if [ "$name" != "$logname" ]; then
+                        die "Dependency \"$1\" was renamed \"$logname\""
+                    fi
+
+                    if [ ! -z "$repository" ];
+                    then
+                        message="\
+Update \"$name\" from \"$repository@$ref\"
+
+git-vendor-name: $name
+git-vendor-dir: $dir
+git-vendor-repository: $repository
+git-vendor-ref: $ref
+"
+                        git fetch "$repository" "$curr_ref"
+                        git subtree pull --prefix "$dir" --message "$message" "$repository" "$ref" --squash
+                        break
+                    fi
+                    ;;
+	    esac
+	done
+}
+
+cmd_remove()
+{
+    require_clean_work_tree
+    name="$1"
+    if [ $# -lt 1 ]; then
+        die "Incorrect options provided: git vendor remove <name>"
+    fi
+    vendor_git_log_from_name "$name" |
+	while read a b junk; do
+	    case "$a" in
+		START) ;;
+                git-vendor-dir:) dir="$b" ;;
+		END)
+                    # Make sure the dependency exists
+                    if [ ! -d "$dir" ]; then
+                        die "Dependency \"$1\" is missing from \"$dir\""
+                    fi
+                    # And hasn't been renamed
+                    logname=$(vendor_name_from_dir "$dir")
+                    if [ "$name" != "$logname" ]; then
+                        die "Dependency \"$1\" was renamed \"$logname\""
+                    fi
+
+                    git rm -rf "$dir"
+                    git commit --message "Removing \"$name\" from \"$dir\""
+                    break
+                    ;;
+	    esac
+	done
+}
+
+# Run the command
+"cmd_$command" "$@"
