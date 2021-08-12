@@ -1,0 +1,17 @@
+branch: true
+ignore-not-existing: true
+llvm: true
+filter: covered
+output-type: lcov
+output-path: ./lcov.info
+coveralls-token: ${{ secrets.COVERALLS_TOKEN }}
+prefix-dir: .
+ignore:
+  - "/*"
+  - "/**/tests/**"
+  - "target/debug/build/**"
+
+excl-line: "#\\[cfg\\(test\\)\\]|#\\[derive|#\\[serde"
+excl-br-line: "#\\[derive\\("
+excl-start: "mod tests \\{"
+excl-br-start: "mod tests \\{"
