@@ -1,0 +1,16 @@
+@import "src/theme/variables.scss";
+
+.page {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  padding: 12px 0 0 0;
+}
+
+.center {
+  align-self: center;
+}
+
+.overflow {
+  overflow-x: scroll;
+}
