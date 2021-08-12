@@ -1,0 +1,22 @@
+# Less size than Debian, slowest to build
+FROM python:3.9-alpine
+
+ENV PYTHONUNBUFFERED 1
+WORKDIR /app
+
+COPY requirements.txt ./
+
+# Signal handling for PID1 https://github.com/krallin/tini
+RUN apk add --update --no-cache tini libpq && \
+    apk add --no-cache --virtual .build-dependencies postgresql-dev alpine-sdk libffi-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apk del .build-dependencies && \
+    find /usr/local \
+        \( -type d -a -name test -o -name tests \) \
+        -o \( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
+        -exec rm -rf '{}' +
+
+COPY . .
+RUN DJANGO_SETTINGS_MODULE=config.settings.local DJANGO_DOT_ENV_FILE=.env.local python manage.py collectstatic --noinput
+
+ENTRYPOINT ["/sbin/tini", "--"]
