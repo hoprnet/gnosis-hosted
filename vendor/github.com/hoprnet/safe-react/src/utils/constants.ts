@@ -35,6 +35,6 @@ export const SPENDING_LIMIT_MODULE_ADDRESS =
 export const KNOWN_MODULES = {
   [SPENDING_LIMIT_MODULE_ADDRESS]: 'Spending limit',
 }
-export const CLIENT_GATEWAY_URL = process.env.REACT_APP_CLIENT_GATEWAY_URL
-export const TRANSACTION_SERVICE_URL = process.env.REACT_APP_TRANSACTION_SERVICE_URL
-export const SAFE_URL = process.env.REACT_APP_SAFE_URL
+export const CLIENT_GATEWAY_URL = process.env.REACT_APP_CLIENT_GATEWAY_URL ?? ''
+export const TRANSACTION_SERVICE_URL = process.env.REACT_APP_TRANSACTION_SERVICE_URL ?? ''
+export const SAFE_URL = process.env.REACT_APP_SAFE_URL ?? ''
