@@ -105,3 +105,4 @@ dist
 
 # custom
 /configs/*.env
+docker-gnosis-safe-react/safe-react
