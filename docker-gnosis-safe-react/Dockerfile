@@ -4,27 +4,27 @@ FROM node:16-buster-slim@sha256:ddb4d0ea63591c5a4ef6a9778e3913c3bfcc70328240bb4f
 # python is used by some nodejs dependencies as an installation requirement
 RUN apt-get update && \
     apt-get install -y \
-    python3 \
-    build-essential
+    python3-dev \
+    git \
+    build-essential \
+    libudev-dev
+
+ADD safe-react /app
 
 WORKDIR /app
 
-RUN cross-env REACT_APP_ENV=production yarn build-mainnet
+ARG REACT_APP_NETWORK
+ARG REACT_APP_IPFS_GATEWAY
+ARG REACT_APP_SPENDING_LIMIT_MODULE_ADDRESS
+ARG REACT_APP_SAFE_URL
+ARG REACT_APP_CLIENT_GATEWAY_URL
+ARG REACT_APP_TRANSACTION_SERVICE_URL
 
-# use slim version of node on Debian buster for smaller image sizes
-FROM node:16-buster-slim@sha256:ddb4d0ea63591c5a4ef6a9778e3913c3bfcc70328240bb4f97d31d4843587f9b as runtime
+ENV REACT_APP_ENV production
+ENV REACT_APP_APP_VERSION 99.0.0
+ENV NODE_OPTIONS=--max-old-space-size=8192
 
-# we use tini as process 1 to catch signals properly, which is also built into
-# D<Plug>_ocker by default
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-     tini \
-  && rm -rf /var/lib/apt/lists/* \
-  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
+RUN env
+RUN yarn && yarn rescripts build
 
-WORKDIR /app
-
-# copy over the contents of node_modules etc
-COPY --from=build /app/build .
-
-ENTRYPOINT ["/usr/bin/tini", "--", "yarn", "hoprd"]
+ENTRYPOINT ["/bin/bash"]

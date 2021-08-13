@@ -1,0 +1,16 @@
+{
+	debug
+}
+
+localhost:80 {
+	handle_path /app* {
+  root * /srv/gnosis-safe-react
+	file_server
+	}
+
+	handle_path /static* {
+  root * /srv/gnosis-safe-react/static
+	file_server
+	}
+
+}

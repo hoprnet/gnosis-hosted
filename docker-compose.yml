@@ -2,8 +2,25 @@ version: '3.5'
 
 volumes:
   gnosis-safe-nginx-shared:
+  caddy-data:
+  caddy-config:
+  caddy-gnosis-safe-react:
 
 services:
+  gnosis-safe-lb:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./Caddyfile.${CADDY_CFG_TYPE:-production}:/etc/caddy/Caddyfile:ro"
+      - caddy-gnosis-safe-react:/srv/gnosis-safe-react
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - gnosis-safe-react
+
   gnosis-safe-nginx:
     image: nginx:alpine
     hostname: nginx
@@ -17,13 +34,9 @@ services:
 
   gnosis-safe-redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
 
   gnosis-safe-transaction-service-db:
     image: postgres:alpine
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: postgres
 
@@ -59,10 +72,17 @@ services:
     depends_on:
       - gnosis-safe-redis
     ports:
-      - "8000:3666"
+      - "3666:3666"
 
   gnosis-safe-react:
     build:
       context: ./docker-gnosis-safe-react
-    env_file:
-      - configs/gnosis-safe-react.env
+      args:
+        - REACT_APP_NETWORK=$REACT_APP_NETWORK
+        - REACT_APP_IPFS_GATEWAY=$REACT_APP_IPFS_GATEWAY
+        - REACT_APP_SPENDING_LIMIT_MODULE_ADDRESS=$REACT_APP_SPENDING_LIMIT_MODULE_ADDRESS
+        - REACT_APP_SAFE_URL=$REACT_APP_SAFE_URL
+        - REACT_APP_CLIENT_GATEWAY_URL=$REACT_APP_CLIENT_GATEWAY_URL
+        - REACT_APP_TRANSACTION_SERVICE_URL=$REACT_APP_TRANSACTION_SERVICE_URL
+    volumes:
+      - caddy-gnosis-safe-react:/app/build
