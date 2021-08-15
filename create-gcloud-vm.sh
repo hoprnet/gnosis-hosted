@@ -24,7 +24,8 @@ msg() {
 }
 
 # work
-declare vm_name="hosted-gnosis-safe"
+declare vm_name="${1:-hosted-gnosis-safe}"
+declare vm_name_ip="${vm_name}-ip"
 declare ssh_cfg="${mydir}/gcloud-vm-ssh.cfg"
 
 test -f "${ssh_cfg}" && { msg "${ssh_cfg} already exists, delete to force creation of new VM"; exit 1; }
@@ -41,6 +42,13 @@ declare gcloud_bootdisk="--boot-disk-size=10GB --boot-disk-type=pd-standard"
 declare gcloud_image="--image-family=cos-89-lts --image-project=cos-cloud"
 declare gcloud_shielded_vm="--shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring"
 
+log "create static IP address"
+if ! gcloud compute addresses describe ${vm_name_ip} ${gcloud_project} ${gcloud_region}; then
+  gcloud compute addresses create ${vm_name_ip} \
+    ${gcloud_project} \
+    ${gcloud_region}
+fi
+
 log "create new VM"
 gcloud compute instances create ${vm_name} \
   ${gcloud_project} \
@@ -50,6 +58,7 @@ gcloud compute instances create ${vm_name} \
   ${gcloud_tags} \
   ${gcloud_bootdisk} \
   ${gcloud_image} \
-  ${gcloud_shielded_vm}
+  ${gcloud_shielded_vm} \
+  --address=${vm_name_ip}
 
 log "finished"

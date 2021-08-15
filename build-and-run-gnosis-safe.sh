@@ -44,15 +44,15 @@ function docker_compose() {
 log "copy gnosis-safe-react into docker-gnosis-safe-react/"
 rsync -rltuv vendor/github.com/hoprnet/safe-react docker-gnosis-safe-react/
 
-log "copy config files into the Dockerfile context's"
-cp configs/gnosis-safe-react.env docker-gnosis-safe-react/.env
+log "copy config files into the correct contexts"
+cp configs/gnosis-safe-react.env .env
 cp configs/gnosis-safe-client-gateway.env vendor/github.com/gnosis/safe-client-gateway/.env
 cp configs/gnosis-safe-transaction-service.env vendor/github.com/gnosis/safe-transaction-service/.env
 
 log "build gnosis safe services"
-docker_compose build
+docker_compose -p gnosis-safe build
 
 log "start gnosis safe services"
-docker_compose start
+docker_compose -p gnosis-safe start
 
 log "finished"

@@ -1,5 +1,5 @@
 {
-	debug
+	debug off
 }
 
 localhost:80 {
@@ -12,5 +12,17 @@ localhost:80 {
   root * /srv/gnosis-safe-react/static
 	file_server
 	}
+}
 
+localhost:17000 {
+	handle_path /static* {
+  root * /srv/gnosis-safe-transaction-service/staticfiles
+	file_server
+	}
+
+	reverse_proxy localhost:8888
+}
+
+localhost:17001 {
+	reverse_proxy localhost:3666
 }

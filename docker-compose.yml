@@ -1,13 +1,15 @@
 version: '3.5'
 
 volumes:
-  gnosis-safe-nginx-shared:
+  # directory for TLS certs and other permanent files used by caddy
   caddy-data:
+  # directory for caddy configuration
   caddy-config:
-  caddy-gnosis-safe-react:
+  caddy-react-files:
+  caddy-transaction-service-files:
 
 services:
-  gnosis-safe-lb:
+  lb:
     image: caddy:alpine
     restart: unless-stopped
     ports:
@@ -15,66 +17,58 @@ services:
       - "443:443"
     volumes:
       - "./Caddyfile.${CADDY_CFG_TYPE:-production}:/etc/caddy/Caddyfile:ro"
-      - caddy-gnosis-safe-react:/srv/gnosis-safe-react
+      - caddy-react-files:/srv/gnosis-safe-react
+      - caddy-transaction-service-files:/srv/gnosis-safe-transaction-service
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
-      - gnosis-safe-react
+      - react
+      - transaction-service-web
 
-  gnosis-safe-nginx:
-    image: nginx:alpine
-    hostname: nginx
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./vendor/github.com/gnosis/safe-transaction-service/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - gnosis-safe-nginx-shared:/nginx
-    depends_on:
-      - gnosis-safe-transaction-service-web
-
-  gnosis-safe-redis:
+  redis:
     image: redis:alpine
 
-  gnosis-safe-transaction-service-db:
+  transaction-service-db:
     image: postgres:alpine
     environment:
       POSTGRES_PASSWORD: postgres
 
-  gnosis-safe-transaction-service-worker: &gnosis-safe-transaction-service-worker
+  transaction-service-worker: &transaction-service-worker
     build:
       context: ./vendor/github.com/gnosis/safe-transaction-service/
       dockerfile: ./docker/web/Dockerfile
     env_file:
       - configs/gnosis-safe-transaction-service.env
     depends_on:
-      - gnosis-safe-transaction-service-db
-      - gnosis-safe-redis
+      - transaction-service-db
+      - redis
     command: docker/web/celery/worker/run.sh
 
-  gnosis-safe-transaction-service-scheduler:
-    <<: *gnosis-safe-transaction-service-worker
+  transaction-service-scheduler:
+    <<: *transaction-service-worker
     command: docker/web/celery/scheduler/run.sh
 
-  gnosis-safe-transaction-service-web:
-    <<: *gnosis-safe-transaction-service-worker
+  transaction-service-web:
+    <<: *transaction-service-worker
     working_dir: /app
     ports:
-      - "8888:8888"
+      - "17000:8888"
     volumes:
-      - gnosis-safe-nginx-shared:/nginx
+      # the folder name nginx is hard-coded in the run script
+      - caddy-transaction-service-files:/nginx
     command: docker/web/run_web.sh
 
-  gnosis-safe-client-gateway-web:
+  client-gateway-web:
     build:
       context: ./vendor/github.com/gnosis/safe-client-gateway/
     env_file:
       - configs/gnosis-safe-client-gateway.env
     depends_on:
-      - gnosis-safe-redis
+      - redis
     ports:
-      - "3666:3666"
+      - "17001:3666"
 
-  gnosis-safe-react:
+  react:
     build:
       context: ./docker-gnosis-safe-react
       args:
@@ -85,4 +79,4 @@ services:
         - REACT_APP_CLIENT_GATEWAY_URL=$REACT_APP_CLIENT_GATEWAY_URL
         - REACT_APP_TRANSACTION_SERVICE_URL=$REACT_APP_TRANSACTION_SERVICE_URL
     volumes:
-      - caddy-gnosis-safe-react:/app/build
+      - caddy-react-files:/app/build

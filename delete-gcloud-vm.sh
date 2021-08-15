@@ -38,4 +38,6 @@ gcloud compute instances delete ${vm_name} \
   ${gcloud_project} \
   ${gcloud_zone}
 
+log "NOTE: any static IP which was assigned to this VM is kept so DNS isn't broken, please delete the IP manually if needed"
+
 log "finished"
