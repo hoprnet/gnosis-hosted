@@ -1,6 +1,6 @@
 import EtherLogo from 'src/config/assets/token_eth.svg'
 import { EnvironmentSettings, ETHEREUM_NETWORK, NetworkConfig, WALLETS } from 'src/config/networks/network.d'
-import { ETHGASSTATION_API_KEY } from 'src/utils/constants'
+import { ETHGASSTATION_API_KEY, SAFE_URL, TRANSACTION_SERVICE_URL, CLIENT_GATEWAY_URL } from 'src/utils/constants'
 
 const baseConfig: EnvironmentSettings = {
   clientGatewayUrl: 'https://safe-client.rinkeby.staging.gnosisdev.com/v1',
@@ -22,16 +22,16 @@ const rinkeby: NetworkConfig = {
   environment: {
     dev: {
       ...baseConfig,
-      safeUrl: 'https://safe-team.dev.gnosisdev.com/app/',
+      safeUrl: SAFE_URL || 'https://safe-team.dev.gnosisdev.com/app/',
     },
     staging: {
       ...baseConfig,
-      safeUrl: 'https://safe-team-rinkeby.staging.gnosisdev.com/app/',
+      safeUrl: SAFE_URL || 'https://safe-team-rinkeby.staging.gnosisdev.com/app/',
     },
     production: {
       ...baseConfig,
-      clientGatewayUrl: 'https://safe-client.rinkeby.gnosis.io/v1',
-      txServiceUrl: 'https://safe-transaction.rinkeby.gnosis.io/api/v1',
+      clientGatewayUrl: CLIENT_GATEWAY_URL || 'https://safe-client.rinkeby.gnosis.io/v1',
+      txServiceUrl: TRANSACTION_SERVICE_URL || 'https://safe-transaction.rinkeby.gnosis.io/api/v1',
     },
   },
   network: {
