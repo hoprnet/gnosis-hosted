@@ -24,7 +24,8 @@ ENV REACT_APP_ENV production
 ENV REACT_APP_APP_VERSION 99.0.0
 ENV NODE_OPTIONS=--max-old-space-size=8192
 
-RUN env
-RUN rm -rf build/ && yarn && yarn rescripts build
+RUN rm -rf build/* && \
+    yarn && \
+    yarn rescripts build
 
 ENTRYPOINT ["/bin/bash"]

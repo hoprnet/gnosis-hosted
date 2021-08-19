@@ -1,0 +1,34 @@
+{
+	debug off
+}
+
+{env.GNOSIS_SAFE_DOMAIN} {
+	encode gzip zsdt
+
+	handle_path /app* {
+		root * /srv/gnosis-safe-react
+		file_server
+	}
+
+	handle_path /static* {
+		root * /srv/gnosis-safe-react/static
+		file_server
+	}
+}
+
+transaction-service-{env.GNOSIS_SAFE_DOMAIN} {
+	encode gzip zsdt
+
+	handle_path /static* {
+		root * /srv/gnosis-safe-transaction-service/staticfiles
+		file_server
+	}
+
+	reverse_proxy localhost:8888
+}
+
+client-gateway-{env.GNOSIS_SAFE_DOMAIN} {
+	encode gzip zsdt
+
+	reverse_proxy localhost:3666
+}

@@ -104,7 +104,7 @@ dist
 .tern-port
 
 # custom
-/configs/*.env
+/configs/*.env.production
 /.env
 /docker-gnosis-safe-react/safe-react
 /vendor/github.com/gnosis/safe-transaction-service/.env

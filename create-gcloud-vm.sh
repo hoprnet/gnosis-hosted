@@ -24,15 +24,9 @@ msg() {
 }
 
 # work
-declare vm_name="${1:-hosted-gnosis-safe}"
+declare vm_name="${1:-gnosis-safe}"
 declare vm_name_ip="${vm_name}-ip"
 declare ssh_cfg="${mydir}/gcloud-vm-ssh.cfg"
-
-log "check if file .env exists"
-if [ -f .env ]; then
-  log "sourcing file .env"
-  source .env
-fi
 
 test -f "${ssh_cfg}" && { msg "${ssh_cfg} already exists, delete to force creation of new VM"; exit 1; }
 test -z "${GCLOUD_PROJECT:-}" && { msg "Missing environment variable GCLOUD_PROJECT"; exit 1; }
@@ -56,7 +50,7 @@ if ! gcloud compute addresses describe ${vm_name_ip} ${gcloud_project} ${gcloud_
     ${gcloud_region}
 fi
 
-declare static_ip=$(gcloud compute addresses describe ${vm_name_ip} ${gcloud_project} ${gcloud_region} | awk '{ print $2; }')
+declare static_ip=$(gcloud compute addresses describe ${vm_name_ip} ${gcloud_project} ${gcloud_region} | head -n 1 | awk '{ print $2; }')
 log "using GCP static IP ${static_ip}"
 
 log "check if GCP VM exists"
@@ -78,7 +72,7 @@ declare cf_zone="${CF_ZONE:-}"
 declare cf_email="${CF_EMAIL:-}"
 declare cf_apikey="${CF_APIKEY:-}"
 declare cf_domain="${CF_DOMAIN:-}"
-declare domains="${vm_name}.intnet.${cf_domain} ${vm_name}-transaction-service.intnet.${cf_domain} ${vm_name}-client-gateway.intnet.${cf_domain}"
+declare domains="${cf_domain} transaction-service-${cf_domain} client-gateway-${cf_domain}"
 
 log "check if Cloudflare credentials are configured"
 if [ -z "${cf_zone}" ] || [ -z "${cf_email}" ] || [ -z "${cf_apikey}" ] || [ -z "${cf_domain}" ]; then
@@ -93,6 +87,7 @@ else
       --data \
       '{"type":"A","name":"'${domain}'","content":"'${static_ip}'","ttl":120,"priority":10,"proxied":false}'
   done
+  echo ""
 fi
 
 log "finished"

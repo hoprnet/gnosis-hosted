@@ -16,7 +16,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "./Caddyfile.${CADDY_CFG_TYPE:-production}:/etc/caddy/Caddyfile:ro"
+      - "./Caddyfile.${GNOSIS_SAFE_ENVIRONMENT:-local}:/etc/caddy/Caddyfile:ro"
       - caddy-react-files:/srv/gnosis-safe-react
       - caddy-transaction-service-files:/srv/gnosis-safe-transaction-service
       - caddy-data:/data

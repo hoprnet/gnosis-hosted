@@ -24,9 +24,12 @@ msg() {
 }
 
 # work
-declare vm_name="hosted-gnosis-safe"
+declare vm_name="${1:-gnosis-safe}"
 
 test -z "${GCLOUD_PROJECT:-}" && { msg "Missing environment variable GCLOUD_PROJECT"; exit 1; }
+test -z "${GNOSIS_SAFE_DOMAIN:-}" && { msg "Missing environment variable GNOSIS_SAFE_DOMAIN"; exit 1; }
+
+declare gnosis_safe_domain="${GNOSIS_SAFE_DOMAIN}"
 
 # gcloud configs
 declare gcloud_project="--project=${GCLOUD_PROJECT}"
@@ -56,6 +59,9 @@ ${gssh} ${vm_name} --command="sudo mv ~/gnosis-hosted-repo ${remote_path}"
 ${gssh} ${vm_name} --command="sudo chown -R root:root ${remote_path}"
 
 log "execute build and run script"
-${gssh} ${vm_name} --command="sudo bash ${remote_path}/build-and-run-gnosis-safe.sh"
+${gssh} ${vm_name} --command="sudo \
+  GNOSIS_SAFE_ENVIRONMENT=production \
+  GNOSIS_SAFE_DOMAIN=${gnosis_safe_domain} \
+  bash ${remote_path}/build-and-run-gnosis-safe.sh"
 
 log "finished"
