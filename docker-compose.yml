@@ -27,7 +27,7 @@ services:
       - react
       - transaction-service-web
 
-  redis:
+  transaction-service-redis:
     image: redis:alpine
 
   transaction-service-db:
@@ -43,7 +43,7 @@ services:
       - "configs/gnosis-safe-transaction-service.env.${GNOSIS_SAFE_ENVIRONMENT}"
     depends_on:
       - transaction-service-db
-      - redis
+      - transaction-service-redis
     command: docker/web/celery/worker/run.sh
 
   transaction-service-scheduler:
@@ -53,12 +53,13 @@ services:
   transaction-service-web:
     <<: *transaction-service-worker
     working_dir: /app
-    ports:
-      - "17000:8888"
     volumes:
       # the folder name nginx is hard-coded in the run script
       - caddy-transaction-service-files:/nginx
     command: docker/web/run_web.sh
+
+  client-gateway-redis:
+    image: redis:alpine
 
   client-gateway-web:
     build:
@@ -66,9 +67,7 @@ services:
     env_file:
       - "configs/gnosis-safe-client-gateway.env.${GNOSIS_SAFE_ENVIRONMENT}"
     depends_on:
-      - redis
-    ports:
-      - "17001:3666"
+      - client-gateway-redis
 
   react:
     build:

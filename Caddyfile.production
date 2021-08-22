@@ -2,6 +2,11 @@
 	email tech@hoprnet.org
 }
 
+(cors) {
+  @origin{args.0} header Origin {args.0}
+	header @origin{args.0} Access-Control-Allow-Origin "{args.0}"
+}
+
 {$GNOSIS_SAFE_DOMAIN} {
 	encode gzip zstd
 
@@ -24,11 +29,19 @@ transaction-service-{$GNOSIS_SAFE_DOMAIN} {
 		file_server
 	}
 
-	reverse_proxy localhost:17000
+  reverse_proxy gnosis-safe-production_transaction-service-web_1:8888
+
+	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+	header Access-Control-Allow-Headers "*"
+	# import cors https://{$GNOSIS_SAFE_DOMAIN}
 }
 
 client-gateway-{$GNOSIS_SAFE_DOMAIN} {
 	encode gzip zstd
 
-	reverse_proxy localhost:17001
+	reverse_proxy gnosis-safe-production_client-gateway-web_1:3666
+
+	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+	header Access-Control-Allow-Headers "*"
+	# import cors https://{$GNOSIS_SAFE_DOMAIN}
 }
