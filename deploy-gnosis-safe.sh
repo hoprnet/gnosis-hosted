@@ -44,7 +44,7 @@ declare gscp="gcloud compute scp ${ssh_args}"
 
 log "build tarball of local files"
 declare tarball="$(mktemp -d)/gnosis.tar.xz"
-tar -caf "${tarball}" .
+tar --exclude-vcs -caf "${tarball}" .
 
 log "upload tarball to server"
 ${gscp} ${tarball} ${vm_name}:~/
@@ -59,9 +59,17 @@ ${gssh} ${vm_name} --command="sudo mv ~/gnosis-hosted-repo ${remote_path}"
 ${gssh} ${vm_name} --command="sudo chown -R root:root ${remote_path}"
 
 log "execute build and run script"
-${gssh} ${vm_name} --command="sudo \
-  GNOSIS_SAFE_ENVIRONMENT=production \
-  GNOSIS_SAFE_DOMAIN=${gnosis_safe_domain} \
-  bash ${remote_path}/build-and-run-gnosis-safe.sh"
+declare run_script="build-and-run-gnosis-safe.sh"
+if [ "${GNOSIS_SAFE_RUN_ONLY:-}" = "true" ]; then
+  run_script="run-gnosis-safe.sh"
+fi
+
+${gssh} ${vm_name} --command="sudo sh -c \"
+  cd ${remote_path} && \
+  env \
+    GNOSIS_SAFE_ENVIRONMENT=production \
+    GNOSIS_SAFE_DOMAIN=${gnosis_safe_domain} \
+    bash ./${run_script} \
+  \""
 
 log "finished"

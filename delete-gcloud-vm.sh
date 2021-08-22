@@ -24,7 +24,7 @@ msg() {
 }
 
 # work
-declare vm_name="hosted-gnosis-safe"
+declare vm_name="${1:-gnosis-safe}"
 declare ssh_cfg="${mydir}/gcloud-vm-ssh.cfg"
 
 test -z "${GCLOUD_PROJECT:-}" && { msg "Missing environment variable GCLOUD_PROJECT"; exit 1; }

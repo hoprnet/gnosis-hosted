@@ -15,8 +15,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      GNOSIS_SAFE_DOMAIN: "${GNOSIS_SAFE_DOMAIN}"
     volumes:
-      - "./Caddyfile.${GNOSIS_SAFE_ENVIRONMENT:-local}:/etc/caddy/Caddyfile:ro"
+      - "./Caddyfile.${GNOSIS_SAFE_ENVIRONMENT}:/etc/caddy/Caddyfile:ro"
       - caddy-react-files:/srv/gnosis-safe-react
       - caddy-transaction-service-files:/srv/gnosis-safe-transaction-service
       - caddy-data:/data
@@ -38,7 +40,7 @@ services:
       context: ./vendor/github.com/gnosis/safe-transaction-service/
       dockerfile: ./docker/web/Dockerfile
     env_file:
-      - configs/gnosis-safe-transaction-service.env
+      - "configs/gnosis-safe-transaction-service.env.${GNOSIS_SAFE_ENVIRONMENT}"
     depends_on:
       - transaction-service-db
       - redis
@@ -62,7 +64,7 @@ services:
     build:
       context: ./vendor/github.com/gnosis/safe-client-gateway/
     env_file:
-      - configs/gnosis-safe-client-gateway.env
+      - "configs/gnosis-safe-client-gateway.env.${GNOSIS_SAFE_ENVIRONMENT}"
     depends_on:
       - redis
     ports:

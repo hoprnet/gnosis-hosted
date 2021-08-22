@@ -42,6 +42,9 @@ if [ "${GNOSIS_SAFE_ENVIRONMENT}" != "local" ] && [ -z "${GNOSIS_SAFE_DOMAIN}" ]
   exit 1
 fi
 
+GNOSIS_SAFE_ENVIRONMENT="${gs_env}"
+GNOSIS_SAFE_DOMAIN="${GNOSIS_SAFE_DOMAIN}"
+
 function docker_compose() {
   if docker-compose 2> /dev/null; then
     docker-compose $@
@@ -55,27 +58,8 @@ function docker_compose() {
   fi
 }
 
-log "copy gnosis-safe-react into docker-gnosis-safe-react/"
-rsync -rltuv vendor/github.com/hoprnet/safe-react docker-gnosis-safe-react/
-
-log "copy config files into the correct contexts"
-cp "${gs_web_cfg}" .env
-cp "${gs_web_cfg}" docker-gnosis-safe-react/safe-react/.env
-cp "${gs_cgw_cfg}" vendor/github.com/gnosis/safe-client-gateway/.env
-cp "${gs_txs_cfg}" vendor/github.com/gnosis/safe-transaction-service/.env
-
 log "stop potentially running services"
 docker_compose -p ${gs_project} stop
-
-log "delete lb and web container and static files volume to ensure volume changes are picked up"
-docker_compose -p ${gs_project} rm -f lb react
-docker volume rm -f ${gs_project}_caddy-react-files
-
-log "build gnosis safe images"
-docker_compose -p ${gs_project} build --parallel
-
-log "create gnosis safe services"
-docker_compose -p ${gs_project} up --no-start --build
 
 log "start gnosis safe services"
 docker_compose -p ${gs_project} start

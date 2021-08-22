@@ -35,10 +35,10 @@ test -z "${GCLOUD_PROJECT:-}" && { msg "Missing environment variable GCLOUD_PROJ
 declare gcloud_project="--project=${GCLOUD_PROJECT}"
 declare gcloud_zone="--zone=europe-west6-a"
 declare gcloud_region="--region=europe-west6"
-declare gcloud_machine_type="--machine-type=e2-medium"
+declare gcloud_machine_type="--machine-type=n2-standard-8"
 declare gcloud_meta="--metadata=google-logging-enabled=true,google-monitoring-enabled=true,enable-oslogin=true --maintenance-policy=MIGRATE"
 declare gcloud_tags="--tags=portainer,healthcheck"
-declare gcloud_bootdisk="--boot-disk-size=10GB --boot-disk-type=pd-standard"
+declare gcloud_bootdisk="--boot-disk-size=100GB --boot-disk-type=pd-standard"
 declare gcloud_image="--image-family=cos-89-lts --image-project=cos-cloud"
 declare gcloud_shielded_vm="--shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring"
 
