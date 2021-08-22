@@ -2,7 +2,16 @@
 	debug off
 }
 
-localhost:80 {
+(cors) {
+  @origin{args.0} header Origin {args.0}
+	header @origin{args.0} Access-Control-Allow-Origin "{args.0}"
+}
+
+http://localhost:80 {
+	handle_path / {
+	  redir http://localhost/app
+	}
+
 	handle_path /app* {
 		root * /srv/gnosis-safe-react
 		file_server
@@ -14,15 +23,30 @@ localhost:80 {
 	}
 }
 
-localhost:17000 {
+http://localhost:17000 {
 	handle_path /static* {
 		root * /srv/gnosis-safe-transaction-service/staticfiles
 		file_server
 	}
 
-	reverse_proxy localhost:8888
+	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+	header Access-Control-Allow-Headers "*"
+	reverse_proxy gnosis-safe-local_transaction-service-web_1:8888
 }
 
-localhost:17001 {
-	reverse_proxy localhost:3666
+http://localhost:17001 {
+	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+	header Access-Control-Allow-Headers "*"
+	reverse_proxy gnosis-safe-local_client-gateway-web_1:3666
+}
+
+http://localhost:17002 {
+	handle_path /static* {
+		root * /srv/gnosis-safe-config-service/staticfiles
+		file_server
+		}
+
+	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+	header Access-Control-Allow-Headers "*"
+	reverse_proxy gnosis-safe-local_config-service-web_1:8000
 }

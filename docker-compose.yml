@@ -7,6 +7,11 @@ volumes:
   caddy-config:
   caddy-react-files:
   caddy-transaction-service-files:
+  caddy-config-service-files:
+  # directory for persistent transaction service data
+  transaction-service-data:
+  # directory for persistent config service data
+  config-service-data:
 
 services:
   lb:
@@ -15,23 +20,30 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "127.0.0.1:17000:17000"
+      - "127.0.0.1:17001:17001"
+      - "127.0.0.1:17002:17002"
     environment:
       GNOSIS_SAFE_DOMAIN: "${GNOSIS_SAFE_DOMAIN}"
     volumes:
       - "./Caddyfile.${GNOSIS_SAFE_ENVIRONMENT}:/etc/caddy/Caddyfile:ro"
       - caddy-react-files:/srv/gnosis-safe-react
       - caddy-transaction-service-files:/srv/gnosis-safe-transaction-service
+      - caddy-config-service-files:/srv/gnosis-safe-config-service
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
       - react
       - transaction-service-web
+      - config-service-web
 
   transaction-service-redis:
     image: redis:alpine
 
   transaction-service-db:
     image: postgres:alpine
+    volumes:
+      - transaction-service-data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgres
 
@@ -53,6 +65,8 @@ services:
   transaction-service-web:
     <<: *transaction-service-worker
     working_dir: /app
+    ports:
+      - "8888"
     volumes:
       # the folder name nginx is hard-coded in the run script
       - caddy-transaction-service-files:/nginx
@@ -64,6 +78,8 @@ services:
   client-gateway-web:
     build:
       context: ./vendor/github.com/gnosis/safe-client-gateway/
+    ports:
+      - "3666"
     env_file:
       - "configs/gnosis-safe-client-gateway.env.${GNOSIS_SAFE_ENVIRONMENT}"
     depends_on:
@@ -81,3 +97,20 @@ services:
         - REACT_APP_TRANSACTION_SERVICE_URL=$REACT_APP_TRANSACTION_SERVICE_URL
     volumes:
       - caddy-react-files:/app/build
+
+  config-service-db:
+    image: postgres:alpine
+    volumes:
+      - config-service-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+  config-service-web:
+    build:
+      context: ./vendor/github.com/gnosis/safe-config-service/
+    env_file:
+      - "configs/gnosis-safe-config-service.env.${GNOSIS_SAFE_ENVIRONMENT}"
+    volumes:
+      - caddy-config-service-files:/nginx
+    depends_on:
+      - config-service-db
