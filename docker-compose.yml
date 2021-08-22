@@ -84,6 +84,11 @@ services:
       - "configs/gnosis-safe-client-gateway.env.${GNOSIS_SAFE_ENVIRONMENT}"
     depends_on:
       - client-gateway-redis
+      - config-service-web
+      - transaction-service-web
+    links:
+      - "config-service-web:configserviceweb"
+      - "transaction-service-web:transactionserviceweb"
 
   react:
     build:
@@ -108,6 +113,8 @@ services:
   config-service-web:
     build:
       context: ./vendor/github.com/gnosis/safe-config-service/
+    ports:
+      - "8000"
     env_file:
       - "configs/gnosis-safe-config-service.env.${GNOSIS_SAFE_ENVIRONMENT}"
     volumes:
