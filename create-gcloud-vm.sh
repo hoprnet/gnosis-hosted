@@ -72,7 +72,7 @@ declare cf_zone="${CF_ZONE:-}"
 declare cf_email="${CF_EMAIL:-}"
 declare cf_apikey="${CF_APIKEY:-}"
 declare cf_domain="${CF_DOMAIN:-}"
-declare domains="${cf_domain} transaction-service-${cf_domain} client-gateway-${cf_domain}"
+declare domains="${cf_domain} transaction-service-${cf_domain} client-gateway-${cf_domain} config-service-${cf_domain}"
 
 log "check if Cloudflare credentials are configured"
 if [ -z "${cf_zone}" ] || [ -z "${cf_email}" ] || [ -z "${cf_apikey}" ] || [ -z "${cf_domain}" ]; then

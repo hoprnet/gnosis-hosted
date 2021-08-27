@@ -1,5 +1,15 @@
 version: '3.5'
 
+networks:
+  gnosis_safe_net:
+    driver: bridge
+    enable_ipv6: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1
+
 volumes:
   # directory for TLS certs and other permanent files used by caddy
   caddy-data:
@@ -23,6 +33,7 @@ services:
       - "127.0.0.1:17000:17000"
       - "127.0.0.1:17001:17001"
       - "127.0.0.1:17002:17002"
+      - "127.0.0.1:17007:17007"
     environment:
       GNOSIS_SAFE_DOMAIN: "${GNOSIS_SAFE_DOMAIN}"
     volumes:
@@ -32,6 +43,8 @@ services:
       - caddy-config-service-files:/srv/gnosis-safe-config-service
       - caddy-data:/data
       - caddy-config:/config
+    networks:
+      gnosis_safe_net:
     depends_on:
       - react
       - transaction-service-web
@@ -39,6 +52,8 @@ services:
 
   transaction-service-redis:
     image: redis:alpine
+    networks:
+      gnosis_safe_net:
 
   transaction-service-db:
     image: postgres:alpine
@@ -46,6 +61,8 @@ services:
       - transaction-service-data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgres
+    networks:
+      gnosis_safe_net:
 
   transaction-service-worker: &transaction-service-worker
     build:
@@ -56,6 +73,8 @@ services:
     depends_on:
       - transaction-service-db
       - transaction-service-redis
+    networks:
+      gnosis_safe_net:
     command: docker/web/celery/worker/run.sh
 
   transaction-service-scheduler:
@@ -70,10 +89,15 @@ services:
     volumes:
       # the folder name nginx is hard-coded in the run script
       - caddy-transaction-service-files:/nginx
+    networks:
+      gnosis_safe_net:
+        ipv4_address: 172.16.238.100
     command: docker/web/run_web.sh
 
   client-gateway-redis:
     image: redis:alpine
+    networks:
+      gnosis_safe_net:
 
   client-gateway-web:
     build:
@@ -86,6 +110,8 @@ services:
       - client-gateway-redis
       - config-service-web
       - transaction-service-web
+    networks:
+      gnosis_safe_net:
     links:
       - "config-service-web:configserviceweb"
       - "transaction-service-web:transactionserviceweb"
@@ -102,6 +128,8 @@ services:
         - REACT_APP_TRANSACTION_SERVICE_URL=$REACT_APP_TRANSACTION_SERVICE_URL
     volumes:
       - caddy-react-files:/app/build
+    networks:
+      gnosis_safe_net:
 
   config-service-db:
     image: postgres:alpine
@@ -109,6 +137,8 @@ services:
       - config-service-data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgres
+    networks:
+      gnosis_safe_net:
 
   config-service-web:
     build:
@@ -119,5 +149,7 @@ services:
       - "configs/gnosis-safe-config-service.env.${GNOSIS_SAFE_ENVIRONMENT}"
     volumes:
       - caddy-config-service-files:/nginx
+    networks:
+      gnosis_safe_net:
     depends_on:
       - config-service-db

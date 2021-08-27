@@ -10,6 +10,10 @@
 {$GNOSIS_SAFE_DOMAIN} {
 	encode gzip zstd
 
+	handle_path / {
+	  redir https://{$GNOSIS_SAFE_DOMAIN}/app
+	}
+
 	handle_path /app* {
 		root * /srv/gnosis-safe-react
 		file_server
@@ -29,19 +33,31 @@ transaction-service-{$GNOSIS_SAFE_DOMAIN} {
 		file_server
 	}
 
-  reverse_proxy gnosis-safe-production_transaction-service-web_1:8888
-
 	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
 	header Access-Control-Allow-Headers "*"
 	# import cors https://{$GNOSIS_SAFE_DOMAIN}
+
+  reverse_proxy transaction-service-web:8888
 }
 
 client-gateway-{$GNOSIS_SAFE_DOMAIN} {
 	encode gzip zstd
 
-	reverse_proxy gnosis-safe-production_client-gateway-web_1:3666
-
 	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
 	header Access-Control-Allow-Headers "*"
 	# import cors https://{$GNOSIS_SAFE_DOMAIN}
+
+	reverse_proxy client-gateway-web:3666
+}
+
+config-service-{$GNOSIS_SAFE_DOMAIN} {
+	handle_path /static* {
+		root * /srv/gnosis-safe-config-service/staticfiles
+		file_server
+		}
+
+	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+	header Access-Control-Allow-Headers "*"
+
+	reverse_proxy config-service-web:8000
 }
