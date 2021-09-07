@@ -1,6 +1,6 @@
 [package]
 name = "safe-client-gateway"
-version = "3.0.1"
+version = "3.3.0"
 authors = ["jpalvarezl <jose.alvarez@gnosis.io>", "rmeissner <richard@gnosis.io>", "fmrsabino <frederico@gnosis.io>"]
 edition = "2018"
 
@@ -10,30 +10,29 @@ edition = "2018"
 dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
 
-regex = "1.4.6"
+regex = "1.5.4"
 lazy_static = "1.4.0"
 
-rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "dd9629697a3cbe45f50645579f41f1a957a92968", features = ["tls", "json"] }
-rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket", rev = "dd9629697a3cbe45f50645579f41f1a957a92968" }
+rocket = { version = "0.5.0-rc.1", features = ["tls", "json"] }
+rocket_codegen = { version = "0.5.0-rc.1" }
 
 # Force rocket peer-dependencies versions
 proc-macro2 = "1.0.28"
-tokio = "1.9.0"
+tokio = "1.10.0"
 
 reqwest = { version = "0.11.3", features = ["json"] }
 
 r2d2 = "0.8.9"
-redis = { version = "0.20", features = ["r2d2"] }
+redis = { version = "0.21", features = ["r2d2"] }
 
-ethcontract-common = "0.13.1"
-ethereum-types = { version = "0.10.0", features = ["serialize"] }
-ethabi = "12.0.0"
+ethcontract-common = "0.15.1"
+ethabi = "14.1.0"
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_repr = "0.1"
 
-itertools = "0.9.0"
+itertools = "0.10.1"
 
 derivative = "2.2.0"
 
@@ -41,13 +40,10 @@ chrono = { version = "0.4", features = ["serde"] }
 
 thiserror = "1.0.20"
 
-mockall = "0.9.1"
+mockall = "0.10.2"
 
-semver = "0.11.0"
+semver = "1.0.4"
 
 # Logging
 log = "0.4"
 env_logger = "0.9.0"
-
-[dev-dependencies]
-cargo-watch = "7.6.1"
