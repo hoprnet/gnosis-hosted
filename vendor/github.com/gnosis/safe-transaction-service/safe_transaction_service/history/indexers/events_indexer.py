@@ -9,6 +9,7 @@ from eth_typing import ChecksumAddress
 from eth_utils import event_abi_to_log_topic
 from hexbytes import HexBytes
 from web3.contract import ContractEvent
+from web3.exceptions import LogTopicError
 from web3.types import EventData, FilterParams, LogReceipt
 
 from .ethereum_indexer import EthereumIndexer, FindRelevantElementsException
@@ -26,7 +27,7 @@ class EventsIndexer(EthereumIndexer):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('block_process_limit', settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT)
         kwargs.setdefault('block_process_limit_max', settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX)
-        kwargs.setdefault('blocks_to_reindex_again', 6)   # Reindex last 6 blocks every run of the indexer
+        kwargs.setdefault('blocks_to_reindex_again', 10)   # Reindex last 10 blocks every run of the indexer
         kwargs.setdefault('confirmations', 2)   # Due to reorgs, wait for the last 2 blocks
         kwargs.setdefault('query_chunk_size', settings.ETH_EVENTS_QUERY_CHUNK_SIZE)
         kwargs.setdefault('updated_blocks_behind', settings.ETH_EVENTS_UPDATED_BLOCK_BEHIND
@@ -126,6 +127,17 @@ class EventsIndexer(EthereumIndexer):
         )
         return log_receipts
 
+    def decode_elements(self, log_receipts: Sequence[LogReceipt]) -> List[EventData]:
+        decoded_elements = []
+        for log_receipt in log_receipts:
+            try:
+                decoded_elements.append(
+                    self.events_to_listen[log_receipt['topics'][0].hex()].processLog(log_receipt)
+                )
+            except LogTopicError:
+                logger.error('Unexpected log format for log-receipt %s', log_receipt, exc_info=True)
+        return decoded_elements
+
     def process_elements(self, log_receipts: Sequence[LogReceipt]) -> List[Any]:
         """
         Process all events found by `find_relevant_elements`
@@ -135,10 +147,8 @@ class EventsIndexer(EthereumIndexer):
         """
         if not log_receipts:
             return []
-        decoded_elements: List[EventData] = [
-            self.events_to_listen[log_receipt['topics'][0].hex()].processLog(log_receipt)
-            for log_receipt in log_receipts
-        ]
+
+        decoded_elements: List[EventData] = self.decode_elements(log_receipts)
         tx_hashes = OrderedDict.fromkeys([event['transactionHash'] for event in log_receipts]).keys()
         logger.debug('Prefetching and storing %d ethereum txs', len(tx_hashes))
         ethereum_txs = self.index_service.txs_create_or_update_from_tx_hashes(tx_hashes)
