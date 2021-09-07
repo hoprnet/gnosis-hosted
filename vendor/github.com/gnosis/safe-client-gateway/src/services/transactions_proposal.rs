@@ -1,9 +1,11 @@
-use crate::cache::Cache;
+use crate::cache::cache_operations::{Invalidate, InvalidationPattern, InvalidationScope};
+use crate::config::default_request_timeout;
 use crate::models::service::transactions::requests::MultisigTransactionRequest;
 use crate::providers::info::{DefaultInfoProvider, InfoProvider};
 use crate::utils::context::Context;
 use crate::utils::errors::{ApiError, ApiResult};
 use std::collections::HashMap;
+use std::time::Duration;
 
 pub async fn submit_confirmation(
     context: &Context<'_>,
@@ -20,12 +22,20 @@ pub async fn submit_confirmation(
     let mut json = HashMap::new();
     json.insert("signature", signature);
 
-    let response = context.client().post(&url).json(&json).send().await?;
+    let response = context
+        .client()
+        .post(&url)
+        .json(&json)
+        .timeout(Duration::from_millis(default_request_timeout()))
+        .send()
+        .await?;
 
     if response.status().is_success() {
-        context
-            .cache()
-            .invalidate_pattern(&format!("*{}*", &safe_tx_hash));
+        Invalidate::new(InvalidationPattern::Any(
+            InvalidationScope::Both,
+            String::from(safe_tx_hash),
+        ))
+        .execute(context.cache());
         Ok(())
     } else {
         Err(ApiError::from_http_response(
@@ -52,13 +62,21 @@ pub async fn propose_transaction(
         .client()
         .post(&url)
         .json(&transaction_request)
+        .timeout(Duration::from_millis(default_request_timeout()))
         .send()
         .await?;
 
     if response.status().is_success() {
-        context
-            .cache()
-            .invalidate_pattern(&format!("*{}*", &safe_address));
+        Invalidate::new(InvalidationPattern::Any(
+            InvalidationScope::Both,
+            String::from(safe_address),
+        ))
+        .execute(context.cache());
+        Invalidate::new(InvalidationPattern::Any(
+            InvalidationScope::Both,
+            String::from(&transaction_request.safe_tx_hash),
+        ))
+        .execute(context.cache());
         Ok(())
     } else {
         Err(ApiError::from_http_response(

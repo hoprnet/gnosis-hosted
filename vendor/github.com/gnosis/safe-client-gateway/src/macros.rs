@@ -5,7 +5,7 @@ macro_rules! concat_parts {
             "{}{}",
             $crate::models::service::transactions::ID_SEPARATOR,
             $parts_head
-        );
+        )
     };
     ($parts_head:expr, $($parts_tail:expr),+) => {
         // `stringify!` will convert the expression *as it is* into a string.
@@ -14,23 +14,23 @@ macro_rules! concat_parts {
             $crate::models::service::transactions::ID_SEPARATOR,
             $parts_head,
             concat_parts!($($parts_tail),+)
-        );
+        )
     };
 }
 
 macro_rules! create_id {
     ($tx_type:expr, $($parts:expr),+) => {
         // `stringify!` will convert the expression *as it is* into a string.
-        format!("{}{}", $tx_type, concat_parts!($($parts),+));
+        format!("{}{}", $tx_type, concat_parts!($($parts),+))
     };
 }
 
 macro_rules! bail {
     ($msg:literal $(,)?) => {
-        return Err($crate::api_error!($msg));
+        return Err($crate::api_error!($msg))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err($crate::api_error!($fmt, $($arg)*));
+        return Err($crate::api_error!($fmt, $($arg)*))
     };
 }
 
@@ -86,7 +86,7 @@ macro_rules! core_uri {
 #[macro_export]
 macro_rules! config_uri {
     ($path:expr) => {{
-        format!("{}{}", $crate::config::base_config_service_url(), $path)
+        format!("{}{}", $crate::config::base_config_service_uri(), $path)
     }};
     ($path:literal, $($arg:tt)*) => {{
         let full_path: String = format!($path, $($arg)*);
