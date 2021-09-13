@@ -9,16 +9,16 @@ services:
       GNOSIS_SAFE_SUPPORT_EMAIL: "${GNOSIS_SAFE_SUPPORT_EMAIL}"
       GNOSIS_SAFE_DOMAIN: "${GNOSIS_SAFE_DOMAIN}"
     volumes:
-      - "./Caddyfile.production:/etc/caddy/Caddyfile:ro"
+      - "/var/lib/gnosis-safe/Caddyfile.production:/etc/caddy/Caddyfile:ro"
 
   transaction-service-worker:
     env_file:
-      - "configs/gnosis-safe-transaction-service.env.production"
+      - "/var/lib/gnosis-safe/gnosis-safe-transaction-service.env.production"
 
   client-gateway-web:
     env_file:
-      - "configs/gnosis-safe-client-gateway.env.production"
+      - "/var/lib/gnosis-safe/gnosis-safe-client-gateway.env.production"
 
   config-service-web:
     env_file:
-      - "configs/gnosis-safe-config-service.env.production"
+      - "/var/lib/gnosis-safe/gnosis-safe-config-service.env.production"
