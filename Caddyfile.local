@@ -2,14 +2,9 @@
 	debug off
 }
 
-(cors) {
-  @origin{args.0} header Origin {args.0}
-	header @origin{args.0} Access-Control-Allow-Origin "{args.0}"
-}
-
 http://localhost:17007 {
 	handle_path / {
-	  redir http://localhost:17007/app
+		redir http://localhost:17007/app
 	}
 
 	handle_path /app* {
@@ -29,14 +24,26 @@ http://localhost:17000 {
 		file_server
 	}
 
-	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-	header Access-Control-Allow-Headers "*"
 	reverse_proxy transaction-service-web:8888
 }
 
 http://localhost:17001 {
-	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-	header Access-Control-Allow-Headers "*"
+	@corsoptions {
+		method OPTIONS
+		header Access-Control-Request-Method *
+	}
+
+	handle @corsoptions {
+		header access-control-allow-credentials true
+		header access-control-allow-headers "X-Requested-With, Content-Type, Authorization"
+		header access-control-allow-methods "POST, GET, OPTIONS"
+		header access-control-allow-origin "*"
+		respond 204 {
+			body ""
+			close
+		}
+	}
+
 	reverse_proxy client-gateway-web:3666
 }
 
@@ -44,9 +51,7 @@ http://localhost:17002 {
 	handle_path /static* {
 		root * /srv/gnosis-safe-config-service/staticfiles
 		file_server
-		}
+	}
 
-	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-	header Access-Control-Allow-Headers "*"
 	reverse_proxy config-service-web:8000
 }

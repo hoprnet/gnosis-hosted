@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  caddy:
+    ports:
+      - "127.0.0.1:17000:17000"
+      - "127.0.0.1:17001:17001"
+      - "127.0.0.1:17002:17002"
+      - "127.0.0.1:17007:17007"
+    volumes:
+      - "./Caddyfile.local:/etc/caddy/Caddyfile:ro"
+
+  transaction-service-worker:
+    env_file:
+      - "configs/gnosis-safe-transaction-service.env.local"
+
+  client-gateway-web:
+    env_file:
+      - "configs/gnosis-safe-client-gateway.env.local"
+
+  config-service-web:
+    env_file:
+      - "configs/gnosis-safe-config-service.env.local"

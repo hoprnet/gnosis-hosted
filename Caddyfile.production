@@ -1,17 +1,12 @@
 {
-	email tech@hoprnet.org
-}
-
-(cors) {
-  @origin{args.0} header Origin {args.0}
-	header @origin{args.0} Access-Control-Allow-Origin "{args.0}"
+	email {$GNOSIS_SAFE_SUPPORT_EMAIL}
 }
 
 {$GNOSIS_SAFE_DOMAIN} {
 	encode gzip zstd
 
 	handle_path / {
-	  redir https://{$GNOSIS_SAFE_DOMAIN}/app
+		redir https://{$GNOSIS_SAFE_DOMAIN}/app
 	}
 
 	handle_path /app* {
@@ -33,19 +28,28 @@ transaction-service-{$GNOSIS_SAFE_DOMAIN} {
 		file_server
 	}
 
-	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-	header Access-Control-Allow-Headers "*"
-	# import cors https://{$GNOSIS_SAFE_DOMAIN}
-
-  reverse_proxy transaction-service-web:8888
+	reverse_proxy transaction-service-web:8888
 }
 
 client-gateway-{$GNOSIS_SAFE_DOMAIN} {
 	encode gzip zstd
 
-	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-	header Access-Control-Allow-Headers "*"
-	# import cors https://{$GNOSIS_SAFE_DOMAIN}
+	@corsoptions {
+		method OPTIONS
+		header Access-Control-Request-Method *
+	}
+
+	handle @corsoptions {
+		header access-control-allow-credentials true
+		header access-control-allow-headers "X-Requested-With,
+							Content-Type, Authorization"
+		header access-control-allow-methods "POST, GET, OPTIONS"
+		header access-control-allow-origin "*"
+		respond 204 {
+			body ""
+			close
+		}
+	}
 
 	reverse_proxy client-gateway-web:3666
 }
@@ -54,10 +58,7 @@ config-service-{$GNOSIS_SAFE_DOMAIN} {
 	handle_path /static* {
 		root * /srv/gnosis-safe-config-service/staticfiles
 		file_server
-		}
-
-	header Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-	header Access-Control-Allow-Headers "*"
+	}
 
 	reverse_proxy config-service-web:8000
 }
