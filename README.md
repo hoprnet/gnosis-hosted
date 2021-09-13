@@ -65,54 +65,53 @@ requirements.
   each occurence with a proper value. Most service configurations are common
   between `local` and `production` versions and therefore kept in a separate
   `.common` file
-- (production-only) Push configuration files onto server such that they can
+- *(production-only)* Push configuration files onto server such that they can
   be used by the Docker daemon at container runtime: `make prepare_production`
-- Build and start containers:
+- Build and start containers (use `GNOSIS_ENVIRONMENT=local` for local testing)
 ```
 GNOSIS_ENVIRONMENT=production \
 GNOSIS_SAFE_DOMAIN=gnosis-safe.abcd.ef \
 GNOSIS_SAFE_SUPPORT_EMAIL=tech@gnosis-safe.abcd.ef \
 make start
 ```
-  Use `GNOSIS_ENVIRONMENT=local` for local testing
 - At this point all services should be started and keep running. If services
 	are crashing, check their logs to identify issues.
 - Create config-service admin user: `docker exec -ti gnosis_config-service-web_1 python src/manage.py createsuperuser`
 - Create transaction-service admin user: `docker exec -ti gnosis_transaction-service-web_1 python manage.py createsuperuser`
 - Setup DNS A-records (or AAAA if you are using IPv6) to point to the server:
-  - "${GNOSIS_SAFE_DOMAIN}"
-  - "config-service-${GNOSIS_SAFE_DOMAIN}"
-  - "transaction-service-${GNOSIS_SAFE_DOMAIN}"
+  - `${GNOSIS_SAFE_DOMAIN}`
+  - `config-service-${GNOSIS_SAFE_DOMAIN}`
+  - `transaction-service-${GNOSIS_SAFE_DOMAIN}`
 - Configure client-gateway by adding chain record in config-service:
   - go to `https://config-service.${GNOSIS_SAFE_DOMAIN}/admin`, replace the placeholder with your domain
   - log in with previously created admin
-	- navigate to `chains` and click `Add Chain`
-	- here are values as an example, however you most likely need to adapt them
-	  - chain id: `1`
-		- relavance: `100`
-		- chain name: `mainnet`
-		- rpc uri: VALID_ETH_ENDPOINT
-		- safe apps rpc uri: VALID_ETH_ENDPOINT
-		- block explorer uri address template: `https://etherscan.io/address/{{address}}`
-		- block explorer uri tx hash template: `https://etherscan.io/address/{{txHash}}`
-		- currency name: `ether`
-		- currency symbol: `ETH`
-		- currency decimals: `18`
-		- currency logo url: `https://cryptologos.cc/logos/ethereum-eth-logo.png`
-		- transaction service uri: `http://172.16.238.100:8888`
-		- theme text color: `#ffffff`
-		- theme background color: `#000000`
-		- gas price oracle uri: `https://etherchain.org/api/gasPriceOracle`
-		- gas price oracle parameter: `average`
-		- gwei multiplier factor: `1.0`
-		- recommended master copy version: `1.1.1`
-	- save
+  - navigate to `chains` and click `Add Chain`
+  - here are values as an example, however you most likely need to adapt them
+    - chain id: `1`
+    - relavance: `100`
+    - chain name: `mainnet`
+    - rpc uri: VALID_ETH_ENDPOINT
+    - safe apps rpc uri: VALID_ETH_ENDPOINT
+    - block explorer uri address template: `https://etherscan.io/address/{{address}}`
+    - block explorer uri tx hash template: `https://etherscan.io/address/{{txHash}}`
+    - currency name: `ether`
+    - currency symbol: `ETH`
+    - currency decimals: `18`
+    - currency logo url: `https://cryptologos.cc/logos/ethereum-eth-logo.png`
+    - transaction service uri: `http://172.16.238.100:8888`
+    - theme text color: `#ffffff`
+    - theme background color: `#000000`
+    - gas price oracle uri: `https://etherchain.org/api/gasPriceOracle`
+    - gas price oracle parameter: `average`
+    - gwei multiplier factor: `1.0`
+    - recommended master copy version: `1.1.1`
+  - save
 - Configure client-gateway webhook in transaction-service:
   - go to `https://transaction-service.${GNOSIS_SAFE_DOMAIN}/admin`, replace the placeholder with your domain
   - log in with previously created admin
-	- navigate to `web hooks` and click `Add Web Hook`
-	- here are values as an example, however you most likely need to adapt them
-	  - url: `http://172.16.238.110:3666/v1/hook/update/WEBHOOK_TOKEN_PLACEHOLDER`, use the token from the client gateway configuration
+  - navigate to `web hooks` and click `Add Web Hook`
+  - here are values as an example, however you most likely need to adapt them
+    - url: `http://172.16.238.110:3666/v1/hook/update/WEBHOOK_TOKEN_PLACEHOLDER`, use the token from the client gateway configuration
 - wait until indexer has reached current network top
   - check `https://transaction-service-${GNOSIS_SAFE_DOMAIN}/admin/history/ethereumblock/`
 
